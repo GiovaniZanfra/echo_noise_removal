@@ -133,7 +133,14 @@ def lms(desired_signal, input_signal, step_size, filtering_order, power_normaliz
 
     for n in range(filtering_order, signal_length):
         desired_ = desired_signal[n]
+        
+        # Ensure input slice is of the correct size, handling the end of the signal
         input_ = input_signal[n-filtering_order:n]  # Slice of length `filtering_order`
+        
+        if len(input_) < filtering_order:
+            # If there are fewer samples left, pad the slice with zeros or any appropriate value
+            input_ = np.pad(input_, (filtering_order - len(input_), 0), mode='constant', constant_values=0)
+        
         output_ = np.dot(input_, weights)
         output_signal[n] = output_
         error_ = desired_ - output_
@@ -142,6 +149,7 @@ def lms(desired_signal, input_signal, step_size, filtering_order, power_normaliz
         weights_evolution.append(weights.copy())  # Save current weights
 
     return output_signal, weights, weights_evolution, error_signal
+
 
 def find_max_step_size(input_signal, filtering_order):
     """
@@ -265,3 +273,35 @@ def analyze_frequencies(signal, sampling_rate):
     magnitudes = np.abs(fft_result) / N
     
     return freqs, magnitudes
+
+def plot_signals(signal_data, figsize=(10, 9)):
+    """
+    Plots multiple signals in a single figure with subplots.
+
+    Parameters:
+        signal_data (list): A list of tuples, where each tuple contains:
+            - A signal (list or array of values to plot).
+            - A label (string) describing the signal.
+        figsize (tuple): The size of the figure (width, height).
+
+    Example:
+        plot_signals([
+            ([0.1, 0.5, 0.9], 'Signal 1'),
+            ([0.2, 0.6, 0.8], 'Signal 2'),
+            ([0.3, 0.7, 0.6], 'Signal 3')
+        ])
+    """
+    num_signals = len(signal_data)
+    fig, ax = plt.subplots(num_signals, 1, figsize=figsize)
+    
+    # Ensure ax is an iterable for single subplot
+    if num_signals == 1:
+        ax = [ax]
+
+    for i, (signal, label) in enumerate(signal_data):
+        ax[i].plot(signal, label=label)
+        ax[i].legend()
+        ax[i].grid(True)
+
+    plt.tight_layout()
+    plt.show()
